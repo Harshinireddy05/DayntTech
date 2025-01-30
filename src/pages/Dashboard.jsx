@@ -36,40 +36,65 @@ const Dashboard = () => {
   const fetchPeople = async () => {
     setLoading(true);
     try {
-      // Get the current user's email
       const userEmail = localStorage.getItem('userEmail');
+      const allUserData = JSON.parse(localStorage.getItem('userData') || '{}');
       
-      // Get stored data for this user
-      const storedData = localStorage.getItem(`userData_${userEmail}`);
+      // Get data specific to this user
+      const userData = allUserData[userEmail] || generateInitialData();
       
-      if (storedData) {
-        setPeople(JSON.parse(storedData));
-        setLoading(false);
-      } else {
-        // Generate initial data for new users
-        const mockData = Array.from({ length: 20 }, (_, index) => ({
-          id: index + 1,
-          name: `Person ${index + 1}`,
-          dateOfBirth: new Date(1980 + index, 0, 1).toISOString().split('T')[0],
-        }));
-        
-        // Store the data for this user
-        localStorage.setItem(`userData_${userEmail}`, JSON.stringify(mockData));
-        setPeople(mockData);
-        setLoading(false);
+      // Save if it's new data
+      if (!allUserData[userEmail]) {
+        allUserData[userEmail] = userData;
+        localStorage.setItem('userData', JSON.stringify(allUserData));
       }
+      
+      setPeople(userData);
+      setLoading(false);
     } catch (error) {
       toast.error('Failed to fetch data');
       setLoading(false);
     }
   };
 
+  const generateInitialData = () => {
+    return Array.from({ length: 20 }, (_, index) => ({
+      id: index + 1,
+      name: `Person ${index + 1}`,
+      dateOfBirth: new Date(1980 + index, 0, 1).toISOString().split('T')[0],
+    }));
+  };
+
+  const handleSubmit = (person) => {
+    const userEmail = localStorage.getItem('userEmail');
+    const allUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+    let updatedPeople;
+
+    if (person.id) {
+      // Editing existing person
+      updatedPeople = people.map(p => p.id === person.id ? person : p);
+      toast.success('Person updated successfully');
+    } else {
+      // Adding new person
+      const newPerson = { ...person, id: Date.now() }; // Use timestamp as ID
+      updatedPeople = [...people, newPerson];
+      toast.success('Person added successfully');
+    }
+
+    setPeople(updatedPeople);
+    allUserData[userEmail] = updatedPeople;
+    localStorage.setItem('userData', JSON.stringify(allUserData));
+    setOpenForm(false);
+  };
+
   const handleDelete = (id) => {
     const updatedPeople = people.filter(person => person.id !== id);
     setPeople(updatedPeople);
-    // Update storage
+    
     const userEmail = localStorage.getItem('userEmail');
-    localStorage.setItem(`userData_${userEmail}`, JSON.stringify(updatedPeople));
+    const allUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+    allUserData[userEmail] = updatedPeople;
+    localStorage.setItem('userData', JSON.stringify(allUserData));
+    
     toast.success('Person deleted successfully');
   };
 
@@ -161,16 +186,7 @@ const Dashboard = () => {
         open={openForm}
         onClose={() => setOpenForm(false)}
         person={editPerson}
-        onSubmit={(person) => {
-          if (editPerson) {
-            setPeople(people.map(p => p.id === person.id ? person : p));
-            toast.success('Person updated successfully');
-          } else {
-            setPeople([...people, { ...person, id: people.length + 1 }]);
-            toast.success('Person added successfully');
-          }
-          setOpenForm(false);
-        }}
+        onSubmit={handleSubmit}
       />
     </Container>
   );

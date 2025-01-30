@@ -13,6 +13,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import CakeIcon from '@mui/icons-material/Cake';
 import { InputAdornment } from '@mui/material';
+import { toast } from 'react-hot-toast';
 
 const PersonForm = ({ open, onClose, person, onSubmit }) => {
   const [formData, setFormData] = useState({

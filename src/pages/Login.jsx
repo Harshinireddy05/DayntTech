@@ -8,6 +8,8 @@ import {
   Paper,
   Avatar,
   InputAdornment,
+  Tab,
+  Tabs,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import EmailIcon from '@mui/icons-material/Email';
@@ -16,15 +18,51 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const Login = () => {
+  const [activeTab, setActiveTab] = useState(0);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+    setEmail('');
+    setPassword('');
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    // Check if email is already registered
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    if (users.some(user => user.email === email)) {
+      toast.error('Email already registered');
+      return;
+    }
+
+    // Save user data
+    users.push({ email, password });
+    localStorage.setItem('users', JSON.stringify(users));
+    
+    // Create empty data structure for new user
+    const allUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+    allUserData[email] = [];
+    localStorage.setItem('userData', JSON.stringify(allUserData));
+
+    toast.success('Account created successfully!');
+    setActiveTab(0); // Switch to login tab
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // In a real app, this would be an API call
-      if (email && password === 'password') {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.email === email && u.password === password);
+
+      if (user) {
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('userEmail', email);
         toast.success('Login successful!');
@@ -79,9 +117,15 @@ const Login = () => {
               color: '#333',
             }}
           >
-            PersonaHub Login
+            PersonaHub
           </Typography>
-          <form onSubmit={handleLogin} style={{ width: '100%', maxWidth: '400px' }}>
+
+          <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
+            <Tab label="Login" />
+            <Tab label="Sign Up" />
+          </Tabs>
+
+          <form onSubmit={activeTab === 0 ? handleLogin : handleSignup} style={{ width: '100%', maxWidth: '400px' }}>
             <TextField
               margin="normal"
               required
@@ -111,7 +155,7 @@ const Login = () => {
               fullWidth
               label="Password"
               type="password"
-              autoComplete="current-password"
+              autoComplete={activeTab === 0 ? "current-password" : "new-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               InputProps={{
@@ -147,7 +191,7 @@ const Login = () => {
                 }
               }}
             >
-              Sign In
+              {activeTab === 0 ? 'Sign In' : 'Sign Up'}
             </Button>
           </form>
         </Paper>
