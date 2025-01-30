@@ -1,0 +1,4 @@
+npx create-react-app persona-hub
+cd persona-hub
+npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
+npm install react-router-dom axios react-hot-toast date-fns 
